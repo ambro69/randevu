@@ -1,0 +1,56 @@
+# PostgreSQL. Versions 9.3 and up are supported.
+#
+# Install the pg driver:
+#   gem install pg
+# On macOS with Homebrew:
+#   gem install pg -- --with-pg-config=/usr/local/bin/pg_config
+# On Windows:
+#   gem install pg
+#       Choose the Win32 build.
+#       Install PostgreSQL and put its /bin directory on your path.
+#
+# Configure Using Gemfile
+#   gem "pg"
+#
+# All connection settings are environment-driven so the same file works for
+# local development and the Docker Compose setup in randevu-deploy/.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see Rails configuration guide
+  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
+  username: <%= ENV.fetch("DATABASE_USERNAME", "postgres") %>
+  password: <%= ENV.fetch("DATABASE_PASSWORD", "postgres") %>
+
+development:
+  <<: *default
+  database: randevu_development
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  <<: *default
+  database: randevu_test
+
+# Store production database in its own PostgreSQL server. The Solid
+# Cache/Queue/Cable databases live alongside it as separate databases.
+production:
+  primary: &production_primary
+    <<: *default
+    database: randevu_production
+  cache:
+    <<: *production_primary
+    database: randevu_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *production_primary
+    database: randevu_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *production_primary
+    database: randevu_production_cable
+    migrations_paths: db/cable_migrate
