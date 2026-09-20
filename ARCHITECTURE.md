@@ -246,10 +246,14 @@ A simplified version is:
 | Agent       | Read JIRA | Read Repo | Modify Code | Run Tests | Review |       Git Commit | Push/PR | Update JIRA |
 | ----------- | --------: | --------: | ----------: | --------: | -----: | ---------------: | ------: | ----------: |
 | Planner     |         ✅ |         ✅ |           ❌ |         ❌ |      ❌ |                ❌ |       ❌ |           ❌ |
-| Implementer |     maybe |         ✅ |           ✅ |         ✅ |      ❌ | later/controlled |       ❌ |  controlled |
+| Implementer |     maybe |         ✅ |           ✅ |         ✅ |      ❌ | later/controlled |       ❌ |      ⚠ start¹ |
 | Reviewer    |     maybe |         ✅ |           ❌ |     maybe |      ✅ |                ❌ |       ❌ |           ❌ |
 | Validator   |     maybe |         ✅ |           ❌ |         ✅ |      ❌ |                ❌ |       ❌ |           ❌ |
 | Release     |     maybe |         ✅ |           ❌ |     maybe |      ❌ |                ✅ |       ✅ |           ✅ |
+
+¹ The only Jira write the Implementer is permitted: transitioning the approved issue
+`To Do` → `In Progress` at implementation start, immediately after the Approval Gate passes.
+All other Jira status/field updates (e.g. → Done) belong to the Release agent (Phase 4).
 
 The important architectural principle is:
 
@@ -318,6 +322,10 @@ Once Phase 1 works reliably, we add implementation.
 This phase introduces the implementation agent.
 
 The implementer works from the approved plan.
+
+At start, once the Approval Gate passes, the implementer moves the approved issue
+`To Do` → `In Progress` — the single Jira write permitted in this phase. The ticket
+stays `To Do` through planning and approval and only moves when implementation begins.
 
 It should not suddenly become a reviewer, release agent, or full autonomous orchestrator.
 
@@ -440,6 +448,15 @@ Only then move to the next phase.
   - **JIRA integration / fetching a ticket:** `opencode.json` wires the Atlassian MCP server
     (`https://mcp.atlassian.com/v2/mcp`); verified reachable against `randevu.atlassian.net`,
     `getJiraIssue` retrieves KAN-4 (status "To Do", matching the plan's recorded snapshot).
+  - **JIRA ticket creation (intake):** `jira-create` skill (`.opencode/skills/jira-create/SKILL.md`)
+    plus the `/jira-create` command (`.opencode/commands/jira-create.md`) convert a raw user
+    requirement into a structured, codebase-grounded Jira ticket: clarifying questions → draft
+    specification in the `plans/JIRA_TEMPLATE.md` structure (REQ-001…, AC-001… Given/When/Then) →
+    explicit user confirmation → metadata selection (issue type, priority, labels, optional
+    assignee) → creation via Atlassian MCP `createJiraIssue`. Guards: creating the ticket is the
+    only Jira write it performs (no transitions, no edits to other issues); likely duplicates and
+    codebase conflicts are surfaced to the user before creation. Pairing with `jira-spec`
+    (retrieval), this closes the Jira integration loop in both directions.
   - **Normalized specification / requirements & AC representation:** `jira-spec` skill
     (`.opencode/skills/jira-spec/SKILL.md`) defines the normalized structure (ticket → metadata +
     specification with requirements, acceptance criteria, constraints, out-of-scope, testing
@@ -477,10 +494,14 @@ Only then move to the next phase.
     `Status: APPROVED` with `Approved By`/`Approved At` filled. Verified live: invoked against
     `plans/KAN-4.md` (still DRAFT) — the implementer stopped and requested human approval
     instead of implementing.
+  - **Jira status at start:** once the gate passes, the implementer transitions the approved issue
+    `To Do` → `In Progress` as its first action — the sole Jira write of this phase (the deliberate
+    carve-out to the "no Jira updates until Phase 4" rule; all other transitions, e.g. → Done, stay
+    in Phase 4).
   - **Task tracking:** per-task status artifacts under `tasks/<JIRA-KEY>/` (layout:
     `tasks/TEMPLATE.md`) with an implementation summary `IMPLEMENTATION.md`.
   - **Output contract:** changes are confined to the working tree and left uncommitted for human
-    review; no branches, commits, pushes, PRs, or Jira updates (those are Phase 4).
+    review; no branches, commits, pushes, or PRs (Git/PR work is Phase 4).
   - **Phase scope respected:** no reviewer/validator/release/orchestration machinery was added
     (Phases 3–5).
   - **Exercised end-to-end (KAN-4):** `plans/KAN-4.md` was human-approved via `/jira-approve`
