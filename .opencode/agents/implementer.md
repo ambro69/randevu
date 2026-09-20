@@ -93,6 +93,9 @@ You MAY:
 - run tests and linters
 - create/update task status artifacts under `tasks/<JIRA-KEY>/`
 - record an implementation summary under `tasks/<JIRA-KEY>/`
+- transition the approved Jira issue `To Do` → `In Progress` at implementation
+  start, immediately after the Approval Gate passes (the ONLY Jira write
+  permitted in this phase)
 
 You MUST NOT:
 
@@ -101,14 +104,18 @@ You MUST NOT:
 - review the implementation (reviewer is a later phase)
 - produce formal validation/evidence matrices (validator is a later phase)
 - create branches, commit, push, or open pull requests
-- transition Jira issues or edit Jira requirements
+- edit Jira requirements, or transition the Jira issue to any status other than
+  the single permitted `To Do` → `In Progress` start transition; no other Jira
+  writes of any kind
 
 ## Workflow
 
 1. Read the approved plan at `plans/<JIRA-KEY>.md`, including its
    Implementation Strategy, Implementation Tasks, Test Plan, and Traceability
    Matrix.
-2. Verify the Approval Gate above. If not approved, stop and report.
+2. Verify the Approval Gate above. If not approved, stop and report. Once
+   verified, transition the Jira issue `To Do` → `In Progress` — the only Jira
+   write permitted; do not edit any other field or status on the issue.
 3. Create a status artifact for every plan task under `tasks/<JIRA-KEY>/`
    following `tasks/TEMPLATE.md`.
 4. For each task, in plan order:

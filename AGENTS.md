@@ -23,10 +23,11 @@ The app is still a bare Rails 8 scaffold: only the default `up`/`rails/health` r
   and tracks per-task status under `tasks/<JIRA-KEY>/` (task layout: `tasks/TEMPLATE.md`).
   Approving is done with `/jira-approve <JIRA-KEY>` (`.opencode/commands/jira-approve.md`), which
   fills the approver name (from `git config user.name`) and timestamp automatically.
-- The implementer changes only working-tree files — it never edits the approved plan, never
-  branches/commits/pushes, never opens PRs, and never updates Jira. Committing and Jira status
-  updates are later-phase (human) responsibilities; the implementer leaves changes uncommitted
-  for review.
+- After the plan is approved, the implementer first transitions the Jira ticket To Do → In
+  Progress (the one Jira write it performs) and then changes only working-tree files — it never
+  edits the approved plan, never branches/commits/pushes, never opens PRs, and makes no other Jira
+  updates. Remaining Jira status changes (e.g. → Done) are later-phase (human) responsibilities;
+  the implementer leaves changes uncommitted for review.
 
 ## Shell / gemset (critical)
 
