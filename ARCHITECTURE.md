@@ -483,8 +483,11 @@ Only then move to the next phase.
     review; no branches, commits, pushes, PRs, or Jira updates (those are Phase 4).
   - **Phase scope respected:** no reviewer/validator/release/orchestration machinery was added
     (Phases 3–5).
-  - **Waiting on:** a human approving a plan (e.g. KAN-4) to exercise the implementer on real
-    work.
+  - **Exercised end-to-end (KAN-4):** `plans/KAN-4.md` was human-approved via `/jira-approve`
+    (2026-09-20), and the implementer then delivered the approved plan — `health` controller, route,
+    and request specs — tracked under `tasks/KAN-4/` with an `IMPLEMENTATION.md`. Verified in the
+    Docker dev stack: `bin/rspec` 5 examples / 0 failures, `bin/rubocop` 28 files clean; all changes
+    left uncommitted for human review.
 
 - [ ] Phase 3 — Review & Validation (Reviewer/Validator agents; not started — `review/` and
   `validation/` are placeholders only)
