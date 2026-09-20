@@ -457,11 +457,47 @@ Only then move to the next phase.
   - **Phase 1 excludes respected:** no implementer/reviewer/validator agents, no automated
     requirement verification, no release/Git automation, no orchestration.
 
-- [ ] Phase 2 — Development (Implementer agent; not started — no implementer agent or commands)
+- [x] **Phase 2 — Development** (completed, verified 2026-09-20)
+
+  The implementer role from §1/§5/§7 is in place and its authority boundary was
+  exercised end-to-end:
+
+  - **Implementer agent:** `.opencode/agents/implementer.md` (subagent). Default-allow tools
+    (modifies code, writes/updates tests, runs tests) with hard denials for non-Phase-2
+    authority: cannot edit `plans/**` (binding plan), `.opencode/**`, or `opencode.json`
+    (framework), cannot run `git commit/push`, branch creation, or `gh pr` commands, and cannot
+    launch subagents (not an orchestrator).
+  - **Command:** `/jira-implement <JIRA-KEY>` (`.opencode/commands/jira-implement.md`) routes a
+    Jira key to the implementer agent.
+  - **Approval command:** `/jira-approve <JIRA-KEY>` (`.opencode/commands/jira-approve.md`) lets a
+    human mark a plan `APPROVED` without hand-editing — it fills `Approved By` from
+    `git config user.name` and `Approved At` from the UTC timestamp automatically, and refuses to
+    overwrite an existing approval.
+  - **Approval gate enforced:** the implementer must not begin until the plan reads
+    `Status: APPROVED` with `Approved By`/`Approved At` filled. Verified live: invoked against
+    `plans/KAN-4.md` (still DRAFT) — the implementer stopped and requested human approval
+    instead of implementing.
+  - **Task tracking:** per-task status artifacts under `tasks/<JIRA-KEY>/` (layout:
+    `tasks/TEMPLATE.md`) with an implementation summary `IMPLEMENTATION.md`.
+  - **Output contract:** changes are confined to the working tree and left uncommitted for human
+    review; no branches, commits, pushes, PRs, or Jira updates (those are Phase 4).
+  - **Phase scope respected:** no reviewer/validator/release/orchestration machinery was added
+    (Phases 3–5).
+  - **Exercised end-to-end (KAN-4):** `plans/KAN-4.md` was human-approved via `/jira-approve`
+    (2026-09-20), and the implementer then delivered the approved plan — `health` controller, route,
+    and request specs — tracked under `tasks/KAN-4/` with an `IMPLEMENTATION.md`. Verified in the
+    Docker dev stack: `bin/rspec` 5 examples / 0 failures, `bin/rubocop` 28 files clean; all changes
+    left uncommitted for human review.
 
 - [ ] Phase 3 — Review & Validation (Reviewer/Validator agents; not started — `review/` and
   `validation/` are placeholders only)
 
 - [ ] Phase 4 — Git / PR / JIRA Workflow (Release agent; not started — no release automation)
+
+  Documented future requirement (§12 — do not implement yet): per-ticket working-tree isolation via
+  feature branches — plans already record a `Recommended Branch: feature/<JIRA-KEY>` (plans/
+  `PLAN_TEMPLATE.md`); the Phase 4 release workflow should create the branch, commit the
+  implementation, push, open the PR against `main`, and update Jira. Until then, a human creates the
+  feature branch manually and agents work in the current working tree, branch-less by design.
 
 - [ ] Phase 5 — Orchestration (not started — workflow runs as discrete manual commands)

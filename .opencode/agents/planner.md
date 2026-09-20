@@ -94,6 +94,7 @@ Record:
 - Jira issue key
 - Jira status at planning time
 - specification snapshot/hash
+- recommended working branch (feature/<JIRA-KEY>) — informational only; the planner never creates branches
 - planning timestamp
 
 This allows later agents to detect whether the Jira specification has changed.

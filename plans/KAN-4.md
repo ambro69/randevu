@@ -4,19 +4,20 @@
 
 ## Plan Status
 
-**Status:** DRAFT
+**Status:** APPROVED
 
-**Approval:** Pending human approval
+**Approval:** Approved
 
-**Approved By:** —
+**Approved By:** ambro69
 
-**Approved At:** —
+**Approved At:** 2026-09-20T03:56:38Z
 
 ## Source
 
 - Jira Issue: [KAN-4](https://randevu.atlassian.net/browse/KAN-4)
 - Jira Status: To Do (status category: new), issue type Story, priority Medium, labels `backend`, `spec-driven`
 - Specification Snapshot: `ca05cae2e50e62cff20ded1a79585fea6d4208a4dfb60d4a3a1d897fdcc33af9` (SHA-256 over the normalized specification text — summary, requirements, acceptance criteria, constraints, out-of-scope, testing requirements — extracted from the Jira description on 2026-09-19)
+- Recommended Branch: feature/KAN-4 (created by a human, not by agents; agents work in the current working tree until Phase 4)
 - Planned At: 2026-09-19T13:33:29Z
 
 > If the Jira issue KAN-4 materially changes after this snapshot, this plan is stale and must be re-planned rather than silently adapted.
