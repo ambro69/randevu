@@ -17,6 +17,16 @@ The app is still a bare Rails 8 scaffold: only the default `up`/`rails/health` r
   (re-plan if the Jira spec drifts).
 - The planner is strictly read-only w.r.t. app code, tests, config, and Jira; it may only write
   `plans/`, `tasks/`, and `decisions/`. Plans are DRAFT until a human approves them.
+- Once a human approves a plan (its `Status:` becomes `APPROVED` with `Approved By`/`Approved At`
+  filled), the **implementer** subagent (`.opencode/agents/implementer.md`, invoked via
+  `.opencode/commands/jira-implement.md`) implements it: it writes the code and tests, runs them,
+  and tracks per-task status under `tasks/<JIRA-KEY>/` (task layout: `tasks/TEMPLATE.md`).
+  Approving is done with `/jira-approve <JIRA-KEY>` (`.opencode/commands/jira-approve.md`), which
+  fills the approver name (from `git config user.name`) and timestamp automatically.
+- The implementer changes only working-tree files — it never edits the approved plan, never
+  branches/commits/pushes, never opens PRs, and never updates Jira. Committing and Jira status
+  updates are later-phase (human) responsibilities; the implementer leaves changes uncommitted
+  for review.
 
 ## Shell / gemset (critical)
 

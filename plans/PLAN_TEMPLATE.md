@@ -17,6 +17,7 @@
 - Jira Issue: <JIRA-KEY>
 - Jira Status: <STATUS>
 - Specification Snapshot: <HASH>
+- Recommended Branch: feature/<JIRA-KEY> (created by a human, not by agents; agents work in the current working tree until Phase 4)
 - Planned At: <TIMESTAMP>
 
 ## 1. Specification
