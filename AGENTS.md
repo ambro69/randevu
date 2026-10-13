@@ -1,82 +1,93 @@
 # AGENTS.md
 
-Rails 8.1.3.1 + Ruby 3.4.8 + PostgreSQL web app (module `Randevu::Application`).
-Importmap + Turbo/Stimulus, no Node build step. Aggregates calendar/meetings from connected mail
-accounts (Google, Outlook, ...).
+Rails 8.1.3.1 + Ruby 3.4.8 + PostgreSQL web app (module `Randevu::Application`). Importmap +
+Turbo/Stimulus, no Node build step. Intended to aggregate calendar/meetings from connected mail
+accounts (no integrations implemented yet). Built spec-driven from Jira; `ARCHITECTURE.md` is the
+design of record for the agent roles, authority model, and phased rollout.
 
-The app is still a bare Rails 8 scaffold: only the default `up`/`rails/health` route and base
-`ApplicationRecord`/`ApplicationController` exist — no domain code yet.
+## Current app state
+
+- No models or app migrations yet (`db/` holds only cache/queue/cable schemas + `seeds.rb`, so there
+  is **no `db/schema.rb`**). Domain code so far is JSON endpoints from KAN-4/KAN-5:
+  `GET /health` (root) and the versioned namespace `GET /api/v1/health`, `GET /api/v1/endpoints`.
+- Non-browser/JSON controllers subclass `ActionController::Base` directly (e.g. `HealthController`,
+  `Api::V1::BaseController`) rather than `ApplicationController`, so `allow_browser versions: :modern`
+  / `stale_when_importmap_changes` never gate API clients. Follow that precedent for new API endpoints.
+- `/api/v1/endpoints` is dynamic: `Api::V1::EndpointListing` derives the method+path list from the
+  live `Rails.application.routes.routes`, filtered to `/api/v1/` — never hardcode that listing.
+- Routes live in `config/routes.rb`. There is no authentication/authorization mechanism anywhere.
 
 ## Spec-driven workflow (OpenCode)
 
-- The app is built spec-driven from **Jira**: `opencode.json` wires the Atlassian MCP server,
-  `.opencode/skills/jira-spec/SKILL.md` normalizes an issue into the project's spec format, and the
-  **planner** subagent (`.opencode/agents/planner.md`, invoked via `.opencode/commands/jira-plan.md`)
-  converts a spec into `plans/<JIRA-KEY>.md` (layout: `plans/PLAN_TEMPLATE.md`).
-- Jira is the source of truth — never invent requirements, and treat the approved plan as binding
-  (re-plan if the Jira spec drifts).
-- The planner is strictly read-only w.r.t. app code, tests, config, and Jira; it may only write
-  `plans/`, `tasks/`, and `decisions/`. Plans are DRAFT until a human approves them.
-- Once a human approves a plan (its `Status:` becomes `APPROVED` with `Approved By`/`Approved At`
-  filled), the **implementer** subagent (`.opencode/agents/implementer.md`, invoked via
-  `.opencode/commands/jira-implement.md`) implements it: it writes the code and tests, runs them,
-  and tracks per-task status under `tasks/<JIRA-KEY>/` (task layout: `tasks/TEMPLATE.md`).
-  Approving is done with `/jira-approve <JIRA-KEY>` (`.opencode/commands/jira-approve.md`), which
-  fills the approver name (from `git config user.name`) and timestamp automatically.
-- After the plan is approved, the implementer first transitions the Jira ticket To Do → In
-  Progress (the one Jira write it performs) and then changes only working-tree files — it never
-  edits the approved plan, never branches/commits/pushes, never opens PRs, and makes no other Jira
-  updates. Remaining Jira status changes (e.g. → Done) are later-phase (human) responsibilities;
-  the implementer leaves changes uncommitted for review.
+- Jira is the source of truth: never invent requirements, and treat the approved plan as binding
+  (re-plan if the Jira spec drifts). Two entry points: `/jira-create` (drafts a new ticket from a
+  requirement, repo-grounded) and `/jira-plan <KEY>` (planner subagent → `plans/<JIRA-KEY>.md`, layout
+  `plans/PLAN_TEMPLATE.md`).
+- The **planner** (`.opencode/agents/planner.md`) is read-only w.r.t. app code/tests/config/Jira and
+  may only write `plans/`, `tasks/`, `decisions/`. Plans are DRAFT until approved.
+- A human approves with `/jira-approve <KEY>` (`.opencode/commands/jira-approve.md`), which sets
+  `Status: APPROVED` plus `Approved By`/`Approved At` from `git config user.name` and UTC now.
+- The **implementer** (`.opencode/agents/implementer.md`, `/jira-implement <KEY>`) runs only after the
+  approval gate passes. It may edit app code/tests, run them, and write `tasks/<JIRA-KEY>/`
+  (layout `tasks/TEMPLATE.md`) + `IMPLEMENTATION.md`; it must not edit `plans/**`, `.opencode/**`,
+  or `opencode.json`. Its only Jira write is `To Do → In Progress` at start.
+- The implementer never branches/commits/pushes/opens PRs and leaves changes uncommitted for review.
+  Later Jira transitions (e.g. → Done) and Git/PR work are later phases (see `ARCHITECTURE.md`).
 
-## Shell / gemset (critical)
+## Shell / gemset
 
-- Ruby lives in rvm gemset `3.4.8@randevu` (pinned by `.ruby-version` / `.ruby-gemset`).
-- Plain non-login shells keep a stale `GEM_HOME` pointing at the deleted `@randeivu`
-  gemset, so `rails` and bundler commands fail ("command not found" / `Bundler::GemNotFound`).
-  Always run app commands through a login shell that selects the gemset:
+- Ruby lives in rvm gemset `3.4.8@randevu` (pinned by `.ruby-version` / `.ruby-gemset`);
+  `bin/rails`, `bin/rspec`, `bin/rubocop` run directly in the session shell.
+- If a shell instead fails with `command not found` or `Bundler::GemNotFound` (stale `GEM_HOME`),
+  re-select the gemset via a login shell:
 
   ```sh
   bash --login -c "rvm use ruby-3.4.8@randevu >/dev/null && cd /home/ambro/projects/randevu && <cmd>"
   ```
 
-- The `Warning! PATH is not properly set up, ...@randeivu/bin` message from shell init is
-  harmless — that gemset no longer exists.
+- The `Warning! PATH is not properly set up, ...` message from shell init is harmless.
 
 ## Database & running the app
 
 - PostgreSQL, **not** the Rails 8 sqlite3 default. `config/database.yml` is env-driven
   (`DATABASE_HOST/PORT/USERNAME/PASSWORD`, defaults `localhost` / `postgres` / `postgres`).
   DBs: `randevu_development`, `randevu_test`, and production
-  `randevu_production{,_cache,_queue,_cable}` (Solid Cache/Queue/Cable use separate PG DBs in
-  prod, the primary DB in dev/test).
-- No Postgres is installed on the host (installing needs sudo, which requires a password).
-  **Do not run DB-touching commands on the host** — run everything inside the Docker app container.
+  `randevu_production{,_cache,_queue,_cable}`; Solid Cache/Queue/Cable use separate PG DBs in prod
+  and the primary DB in dev/test.
+- No Postgres is installed on the host. **Do not run DB-touching commands on the host** — run them
+  inside the Docker app container.
 - Dev stack: `docker compose -f randevu-deploy/docker-compose.yml up --build`
-  (app on `:3000`, Postgres on `:5432`, PG data persists in the `postgres_data` volume).
-- One-off commands: `docker compose -f randevu-deploy/docker-compose.yml run --rm app bin/rails <cmd>`
-  (e.g. `bin/rails db:prepare`, `bin/rails console`).
-- Postgres credentials live in `randevu-deploy/.env` (git-ignored); the committed template is
-  `randevu-deploy/.env.example`. Never commit real credentials.
-- Docker Desktop (engine 28.3, Compose v2) is installed and the daemon is reachable — the dev
-  stack above works. First `up --build` builds the dev image and creates the `postgres_data` volume.
-- To update the lockfile, run `bundle lock` on the host (no native compilation needed).
-  Avoid `bundle install` on the host (pg needs `libpq` headers that aren't installed).
+  (app on `:3000`, Postgres on `:5432`, data persists in the `postgres_data` volume).
+- One-off commands:
+  `docker compose -f randevu-deploy/docker-compose.yml run --rm app bin/rails <cmd>`.
+- Postgres credentials live in `randevu-deploy/.env` (git-ignored); template is `.env.example`.
+  Never commit real credentials.
+- To update the lockfile run `bundle lock` on the host (no native compilation). Avoid
+  `bundle install` on the host (the `pg` gem needs `libpq` headers that aren't installed).
 
-## Verification
+## Verification / tests
 
-- Lint: `bin/rubocop`. Security (no DB needed): `bin/brakeman`, `bin/bundler-audit`, `bin/importmap audit`.
-- Tests use **RSpec** (`bin/rspec`, a.k.a. `bundle exec rspec`). There is no Minitest
-  suite anymore (`test/` was removed; specs live in `spec/`).
-- RSpec needs Postgres and the pg gem, which only exist in the container:
-  `docker compose -f randevu-deploy/docker-compose.yml run --rm app bin/rails db:test:prepare` then
-  `bin/rspec`. `db:test:prepare` is a manual prerequisite of the test task. Locally (host, no
-  Postgres), only DB-free specs run — the committed smoke spec (`spec/smoke_spec.rb`) is DB-free
-  for this reason.
-- `bin/ci` runs setup → rubocop → audits → tests → seeds replant.
-- GitHub Actions CI `test` job has a `postgres` service container and runs
-  `bin/rails db:test:prepare && bin/rspec`. The former `system-test` job is disabled until
-  system specs exist (see the commented-out block in `.github/workflows/ci.yml`).
+- Lint + security (host, no DB): `bin/rubocop`, `bin/brakeman`, `bin/bundler-audit`,
+  `bin/importmap audit`.
+- Tests use **RSpec** (`bin/rspec`). Postgres and the `pg` gem exist only in the container, so run
+  specs there:
+  `docker compose -f randevu-deploy/docker-compose.yml run --rm app bin/rspec`.
+- **Gotcha:** `bin/rails db:test:prepare` currently exits 1 with
+  "`db/schema.rb` doesn't exist yet" because the app has no migrations. The suite still runs and
+  passes (21 examples) — don't mistake the prepare failure for a test failure. CI's `test` job chains
+  `bin/rails db:test:prepare && bin/rspec`, so the same failure mode applies there.
+- `bin/ci` (`config/ci.rb`) runs: setup → rubocop → security audits (bundler-audit, importmap,
+  brakeman) → `db:test:prepare && rspec` → `db:seed:replant`.
+
+## RSpec conventions
+
+- Specs live in `spec/`. Note the non-default `spec/units/` (plain-Ruby unit specs) alongside
+  `spec/requests/`; `spec/smoke_spec.rb` is DB-free.
+- Spec type inference is OFF (`config.infer_spec_type_from_file_location!` is commented out), so
+  request specs must declare `type: :request` explicitly.
+- Request specs MUST set `before { host! "example.test" }`: Rails 8.1 test-env
+  `ActionDispatch::HostAuthorization` returns 403 for the default `www.example.com` before routing.
+- `spec/rails_helper.rb` calls `maintain_test_schema!`; `spec/examples.txt` is git-ignored.
 
 ## Image split (do not conflate)
 
@@ -86,11 +97,8 @@ The app is still a bare Rails 8 scaffold: only the default `up`/`rails/health` r
   live-mounted at `/rails`.
 - `config/deploy.yml` uses a postgres `accessories.db` for production deploys.
 
-## History
+## Workflow artifacts
 
-- App was renamed **Randeivu → Randevu**; only stale shell PATH warnings still mention the old name.
-- Test suite migrated **Minitest → RSpec**: `test/` removed, `rspec-rails` added, one DB-free
-  smoke spec (`spec/smoke_spec.rb`) proves the suite runs. `spec/rails_helper.rb` still calls
-  `maintain_test_schema!`; enable it around the first DB-backed spec (needs `db:test:prepare`
-  first). `spec/examples.txt` is git-ignored.
-- No app migrations yet (`db/` only has cache/queue/cable schemas + `seeds.rb`), so there is no `db/schema.rb`.
+- `ARCHITECTURE.md` — agent roles, authority table, phase plan (Phases 1–3 done conceptually; 4–5 not started).
+- Agents: `planner`, `implementer`, `reviewer`, `validator` (and commands `/jira-plan`, `/jira-approve`, `/jira-implement`, `/jira-review`, `/jira-validate`).
+- Artifacts: `plans/<JIRA-KEY>.md` (`plans/PLAN_TEMPLATE.md`), `tasks/<JIRA-KEY>/` (`tasks/TEMPLATE.md`), `review/<JIRA-KEY>/REVIEW.md`, `validation/<JIRA-KEY>/VALIDATION.md`, `decisions/`.

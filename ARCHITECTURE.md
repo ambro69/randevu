@@ -510,8 +510,15 @@ Only then move to the next phase.
     Docker dev stack: `bin/rspec` 5 examples / 0 failures, `bin/rubocop` 28 files clean; all changes
     left uncommitted for human review.
 
-- [ ] Phase 3 — Review & Validation (Reviewer/Validator agents; not started — `review/` and
-  `validation/` are placeholders only)
+- [x] **Phase 3 — Review & Validation** (completed, verified 2026-10-13)
+
+  Reviewer and validator roles from §8 are implemented and exercised on KAN-5:
+
+  - **Reviewer agent:** `.opencode/agents/reviewer.md` (subagent). Read-only w.r.t. code/tests/plans/Jira/Git; produces `review/<JIRA-KEY>/REVIEW.md` with verdict and findings.
+  - **Validator agent:** `.opencode/agents/validator.md` (subagent). Read-only, runs verification per runbook and produces `validation/<JIRA-KEY>/VALIDATION.md` with requirement-level evidence matrix and test/lint/audit results.
+  - **Commands:** `/jira-review <JIRA-KEY>` (`.opencode/commands/jira-review.md`) and `/jira-validate <JIRA-KEY>` (`.opencode/commands/jira-validate.md`).
+  - **Artifacts:** `review/KAN-5/REVIEW.md` (verdict Approve) and `validation/KAN-5/VALIDATION.md` (verdict PASS; maps REQ-001..REQ-010/AC-001..AC-008, shows 21 examples/0 failures, rubocop/security clean).
+  - **Authority boundaries:** both agents deny edits to code/tests/plans, deny git/PR operations, deny Jira writes, deny spawning subagents — consistent with Phase 3 (verification only). No release/orchestration introduced.
 
 - [ ] Phase 4 — Git / PR / JIRA Workflow (Release agent; not started — no release automation)
 
