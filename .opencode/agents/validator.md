@@ -3,9 +3,14 @@ description: Validates implementation by running checks/tests and mapping eviden
 mode: subagent
 
 permissions:
+  # Read-only everywhere except the validator's own artifacts: the blanket deny
+  # below is overridden only for validation/<JIRA-KEY>/ paths (last matching rule wins).
   - action: edit
     resource: "*"
     effect: deny
+  - action: edit
+    resource: "validation/*"
+    effect: allow
   - action: shell
     resource: "git commit*"
     effect: deny

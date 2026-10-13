@@ -520,12 +520,36 @@ Only then move to the next phase.
   - **Artifacts:** `review/KAN-5/REVIEW.md` (verdict Approve) and `validation/KAN-5/VALIDATION.md` (verdict PASS; maps REQ-001..REQ-010/AC-001..AC-008, shows 21 examples/0 failures, rubocop/security clean).
   - **Authority boundaries:** both agents deny edits to code/tests/plans, deny git/PR operations, deny Jira writes, deny spawning subagents — consistent with Phase 3 (verification only). No release/orchestration introduced.
 
-- [ ] Phase 4 — Git / PR / JIRA Workflow (Release agent; not started — no release automation)
+- [x] **Phase 4 — Git / PR / JIRA Workflow** (completed)
 
-  Documented future requirement (§12 — do not implement yet): per-ticket working-tree isolation via
-  feature branches — plans already record a `Recommended Branch: feature/<JIRA-KEY>` (plans/
-  `PLAN_TEMPLATE.md`); the Phase 4 release workflow should create the branch, commit the
-  implementation, push, open the PR against `main`, and update Jira. Until then, a human creates the
-  feature branch manually and agents work in the current working tree, branch-less by design.
+  The Release role from §1/§5/§9 is implemented and its authority boundary is enforced:
+
+  - **Release agent:** `.opencode/agents/release.md` (subagent). Holds the Phase 4 release authority
+    (create the feature branch, commit, push, open a PR, transition Jira) while denying edits to
+    `app/**`, `spec/**`, `config/**`, `db/**`, `lib/**`, `plans/**`, `.opencode/**`, `opencode.json`;
+    releasing with local `git` for the branch/commit/push and the GitHub MCP for the pull request, with
+    guardrail denials for `git push origin main*`, `git push -u origin main*`, `git push --force*`/`-f*`,
+    and `gh pr merge*`; denying the GitHub MCP merge tool (`github_merge_pull_request`); and denying
+    spawning subagents (not an orchestrator).
+  - **Command:** `/jira-release <JIRA-KEY>` (`.opencode/commands/jira-release.md`) routes a Jira key
+    to the Release agent.
+  - **Release gate:** refuses, mutating nothing, unless `plans/<JIRA-KEY>.md` is `Status: APPROVED`
+    (with `Approved By`/`Approved At`) and `validation/<JIRA-KEY>/VALIDATION.md` reports
+    `Verdict: PASS`.
+  - **Release process:** the commit contains exactly the plan's Files Expected To Change/Added plus
+    `plans/<JIRA-KEY>.md` plus `tasks/<KEY>/`, `review/<KEY>/`, `validation/<KEY>/`; branch
+    `feature/<JIRA-KEY>` is created from `main` locally; the enumerated files are staged, committed in
+    a single commit, and the branch is pushed with local `git`, then a pull request is opened against
+    `main` via the GitHub MCP with a plan- and validation-derived body; the Jira issue is transitioned
+    to `In Review` and the PR is linked via a comment; `release/<JIRA-KEY>/RELEASE.md` is written after
+    the commit (uncommitted) recording the real commit SHA and PR URL.
+  - **Unrelated changes:** proceed-and-exclude — unrelated working-tree changes are not committed or
+    pushed, are left untouched, and are reported.
+  - **Safety:** never pushes to `main`, never force-pushes, and never merges a PR (merging is
+    human-only).
+  - **Transport:** branch/commit/push are performed locally with `git`; the pull request is opened via
+    the GitHub MCP (no `gh` CLI in the local environment); Jira updates use the Atlassian MCP.
+  - **Phase scope respected:** no Phase 5 orchestration/chaining, no deployment/tagging/Kamal changes,
+    no CI changes.
 
 - [ ] Phase 5 — Orchestration (not started — workflow runs as discrete manual commands)

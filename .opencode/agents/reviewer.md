@@ -3,9 +3,14 @@ description: Reviews an implementation against an approved plan and Jira specifi
 mode: subagent
 
 permissions:
+  # Read-only everywhere except the reviewer's own artifacts: the blanket deny
+  # below is overridden only for review/<JIRA-KEY>/ paths (last matching rule wins).
   - action: edit
     resource: "*"
     effect: deny
+  - action: edit
+    resource: "review/*"
+    effect: allow
   - action: shell
     resource: "git commit*"
     effect: deny

@@ -99,6 +99,6 @@ design of record for the agent roles, authority model, and phased rollout.
 
 ## Workflow artifacts
 
-- `ARCHITECTURE.md` — agent roles, authority table, phase plan (Phases 1–3 done conceptually; 4–5 not started).
-- Agents: `planner`, `implementer`, `reviewer`, `validator` (and commands `/jira-plan`, `/jira-approve`, `/jira-implement`, `/jira-review`, `/jira-validate`).
-- Artifacts: `plans/<JIRA-KEY>.md` (`plans/PLAN_TEMPLATE.md`), `tasks/<JIRA-KEY>/` (`tasks/TEMPLATE.md`), `review/<JIRA-KEY>/REVIEW.md`, `validation/<JIRA-KEY>/VALIDATION.md`, `decisions/`.
+- `ARCHITECTURE.md` — agent roles, authority table, phase plan (Phases 1–4 completed; Phase 5 not started).
+- Agents: `planner`, `implementer`, `reviewer`, `validator`, `release` (and commands `/jira-plan`, `/jira-approve`, `/jira-implement`, `/jira-review`, `/jira-validate`, `/jira-release`).
+- Artifacts: `plans/<JIRA-KEY>.md` (`plans/PLAN_TEMPLATE.md`), `tasks/<JIRA-KEY>/` (`tasks/TEMPLATE.md`), `review/<JIRA-KEY>/REVIEW.md`, `validation/<JIRA-KEY>/VALIDATION.md`, `release/<JIRA-KEY>/RELEASE.md`, `decisions/`.
