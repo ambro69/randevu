@@ -4,6 +4,14 @@
       "atlassian": {
         "type": "remote",
         "url": "https://mcp.atlassian.com/v2/mcp"
+      },
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:GITHUB_MCP_TOKEN}"
+        }
       }
     }
   }
