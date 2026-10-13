@@ -24,6 +24,16 @@
   </head>
 
   <body>
+    <header class="site-header">
+      <nav class="site-nav" aria-label="Primary">
+        <%= link_to "Randevu", root_path, class: "site-brand" %>
+      </nav>
+    </header>
+
     <%= yield %>
+
+    <footer class="site-footer">
+      <p>&copy; <%= Time.current.year %> Randevu. All rights reserved.</p>
+    </footer>
   </body>
 </html>

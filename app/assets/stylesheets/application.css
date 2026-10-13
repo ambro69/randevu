@@ -8,3 +8,88 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+/* Greyscale-only presentation. Hand-written CSS; no framework, no dependency. */
+
+:root {
+  --grey-900: #111111;
+  --grey-700: #333333;
+  --grey-500: #555555;
+  --grey-300: #cccccc;
+  --grey-100: #f2f2f2;
+  --grey-000: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--grey-000);
+  color: var(--grey-900);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--grey-300);
+  background-color: var(--grey-100);
+}
+
+.site-nav {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+
+.site-brand {
+  color: var(--grey-900);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.site-brand:hover,
+.site-brand:focus {
+  text-decoration: underline;
+}
+
+.page {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.75rem;
+  font-size: 2.25rem;
+  line-height: 1.2;
+}
+
+.hero p {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--grey-500);
+  font-size: 1.125rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--grey-300);
+  background-color: var(--grey-100);
+}
+
+.site-footer p {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  color: var(--grey-700);
+  font-size: 0.875rem;
+}
+
+@media (min-width: 40rem) {
+  .page {
+    padding: 4rem 2rem;
+  }
+}
