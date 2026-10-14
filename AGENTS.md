@@ -33,6 +33,15 @@ design of record for the agent roles, authority model, and phased rollout.
   or `opencode.json`. Its only Jira write is `To Do → In Progress` at start.
 - The implementer never branches/commits/pushes/opens PRs and leaves changes uncommitted for review.
   Later Jira transitions (e.g. → Done) and Git/PR work are later phases (see `ARCHITECTURE.md`).
+- The **reviewer** (`/jira-review`), **validator** (`/jira-validate`), and **release** (`/jira-release`)
+  roles verify and ship the work. The release gate requires an APPROVED plan plus
+  `validation/<KEY>/VALIDATION.md` with `Verdict: PASS`; merging the PR is human-only.
+- The **orchestrator** (`.opencode/agents/orchestrator.md`) chains the whole pipeline for one ticket:
+  `/orch <KEY>` (interactive — pauses at each gate) or `/orch <KEY> auto` (unattended up to the
+  PR). It holds no code/Git/Jira authority of its own: it only launches the five role subagents,
+  enforces the gates, and records `orchestration/<KEY>/RUN.md` (`orchestration/TEMPLATE.md`). In
+  autonomous mode it auto-records the plan approval as the invoking user and pauses only on hard-stop
+  conditions (spec drift, ambiguity, exhausted retry budget, unmet gates, dirty tree, tool failures).
 
 ## Shell / gemset
 
@@ -99,6 +108,6 @@ design of record for the agent roles, authority model, and phased rollout.
 
 ## Workflow artifacts
 
-- `ARCHITECTURE.md` — agent roles, authority table, phase plan (Phases 1–4 completed; Phase 5 not started).
-- Agents: `planner`, `implementer`, `reviewer`, `validator`, `release` (and commands `/jira-plan`, `/jira-approve`, `/jira-implement`, `/jira-review`, `/jira-validate`, `/jira-release`).
-- Artifacts: `plans/<JIRA-KEY>.md` (`plans/PLAN_TEMPLATE.md`), `tasks/<JIRA-KEY>/` (`tasks/TEMPLATE.md`), `review/<JIRA-KEY>/REVIEW.md`, `validation/<JIRA-KEY>/VALIDATION.md`, `release/<JIRA-KEY>/RELEASE.md`, `decisions/`.
+- `ARCHITECTURE.md` — agent roles, authority table, phase plan (Phases 1–5 completed).
+- Agents: `planner`, `implementer`, `reviewer`, `validator`, `release`, `orchestrator` (and commands `/jira-plan`, `/jira-approve`, `/jira-implement`, `/jira-review`, `/jira-validate`, `/jira-release`, `/orch`).
+- Artifacts: `plans/<JIRA-KEY>.md` (`plans/PLAN_TEMPLATE.md`), `tasks/<JIRA-KEY>/` (`tasks/TEMPLATE.md`), `review/<JIRA-KEY>/REVIEW.md`, `validation/<JIRA-KEY>/VALIDATION.md`, `release/<JIRA-KEY>/RELEASE.md`, `orchestration/<JIRA-KEY>/RUN.md` (`orchestration/TEMPLATE.md`), `decisions/`.
