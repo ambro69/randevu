@@ -552,4 +552,40 @@ Only then move to the next phase.
   - **Phase scope respected:** no Phase 5 orchestration/chaining, no deployment/tagging/Kamal changes,
     no CI changes.
 
-- [ ] Phase 5 — Orchestration (not started — workflow runs as discrete manual commands)
+- [x] **Phase 5 — Orchestration** (completed)
+
+  The orchestrator role from §10 and the `/orch` command compose the Phase 1–4 roles into a single
+  pipeline:
+
+  - **Orchestrator agent:** `.opencode/agents/orchestrator.md` (`mode: primary`). Holds no
+    implementation, plan-content, Git, or Jira authority of its own: it may only launch the five
+    existing role subagents (a `subagent` allow-list), write its own run-state artifact under
+    `orchestration/`, and — in autonomous mode only — record the plan's approval block. Denials: edits
+    everywhere except `orchestration/*` and (approval block only) `plans/*`; no
+    `git commit/push/branch/checkout -b/switch -c/reset/rebase/merge` and no `gh pr`; no Atlassian or
+    GitHub MCP access (both delegated).
+  - **Command:** `/orch <JIRA-KEY> [mode]` (`.opencode/commands/orch.md`, `agent: orchestrator`).
+    `mode` is optional and defaults to interactive; `auto` (or `--auto`) runs unattended.
+    An unrecognized mode aborts before the pipeline starts.
+  - **Pipeline:** plan → approve → implement → review → validate → release. Each stage is performed by
+    its existing subagent with a prompt equivalent to `/jira-plan`, `/jira-implement`, `/jira-review`,
+    `/jira-validate`, `/jira-release`; the orchestrator reads the produced artifact and enforces the
+    approval and release gates before advancing.
+  - **Interactive mode:** pauses at each gate; the human approves the plan via `/jira-approve <KEY>`.
+  - **Autonomous mode:** auto-records the approval block as the invoking user (from
+    `git config user.name`; pauses rather than inventing one if empty), loops implement → review →
+    validate up to a bounded retry budget (2 remediation attempts), and pauses only on hard-stop
+    conditions.
+  - **Pause conditions:** spec drift, an ambiguity/conflict needing a human decision, reviewer
+    `Needs Clarification`, exhausted retry budget (review still `Changes Requested` or validation not
+    `PASS`), an unmet gate, pre-existing tracked-code changes in the working tree, a release conflict
+    (branch/PR already exists), a tool/Jira/GitHub failure, or anything requiring an unauthorized
+    destructive action.
+  - **Run state & resumption:** `orchestration/<JIRA-KEY>/RUN.md` (`orchestration/TEMPLATE.md`)
+    records the stage table, gate checks, approval method, remediation attempts, pause state, and
+    outcome; a paused run resumes from it when `/orch <KEY> <mode>` is re-invoked.
+  - **Human checkpoint preserved:** the pipeline stops before merge — merging the PR remains
+    human-only (release never merges) — and the approved-plan invariant is recorded honestly
+    (auto-approval names the invoking user) rather than silently skipped.
+  - **Phase scope respected:** the orchestrator adds no new authorities; it sequences the existing
+    Phase 1–4 roles and records state. No deployment/tagging/Kamal/CI changes.
