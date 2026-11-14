@@ -46,7 +46,7 @@ group :development, :test do
 
   # Behavior-driven development test framework for Rails
   # https://github.com/rspec/rspec-rails
-  gem "rspec-rails", "~> 8.0"
+  gem "rspec-rails", "~> 8.1"
 
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false
